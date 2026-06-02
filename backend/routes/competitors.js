@@ -98,10 +98,16 @@ router.post('/search', async (req, res) => {
     }
   }
 
-  const saved = appendAds(toSave); // writes to ads.json + assigns numeric ids
+  const saved = appendAds(toSave); // assigns numeric ids (persists to ads.json when the FS is writable)
 
-  // Re-query the persisted dataset so results carry stable ids + fresh scores.
-  const results = searchByCompetitors(competitors);
+  // Re-query the persisted dataset so results carry stable ids + fresh scores,
+  // then merge in the freshly-collected ads. On read-only filesystems (e.g.
+  // Vercel serverless) the write above is a no-op, so the re-query alone would
+  // drop everything we just fetched — the merge guarantees new ads still show.
+  const persisted = searchByCompetitors(competitors);
+  const byId = new Map(persisted.map((ad) => [ad.id, ad]));
+  for (const ad of saved) if (!byId.has(ad.id)) byId.set(ad.id, ad);
+  const results = [...byId.values()];
 
   const payload = {
     query: competitors,

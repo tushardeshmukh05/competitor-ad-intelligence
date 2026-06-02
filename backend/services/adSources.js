@@ -36,21 +36,26 @@ const runners = {
 function buildChain(source) {
   const haveApi = isConfigured();
   const allowMock = process.env.USE_MOCK_SCRAPER === 'true';
+  // Playwright can't launch a browser on serverless platforms (no Chromium
+  // binary), so on Vercel we drop 'scrape' from every chain — it would only
+  // ever throw and waste a fallback slot.
+  const canScrape = !process.env.VERCEL;
+  const scrape = canScrape ? 'scrape' : null;
 
   let chain;
   switch (source) {
     case 'api':
-      chain = ['api', 'scrape'];
+      chain = ['api', scrape];
       break;
     case 'scrape':
-      chain = ['scrape', haveApi ? 'api' : null];
+      chain = [scrape, haveApi ? 'api' : null];
       break;
     case 'mock':
       chain = ['mock'];
       break;
     case 'auto':
     default:
-      chain = [haveApi ? 'api' : null, 'scrape'];
+      chain = [haveApi ? 'api' : null, scrape];
   }
   if (allowMock) chain.push('mock');
   // de-dupe + drop nulls
