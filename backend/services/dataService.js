@@ -23,9 +23,16 @@ function readRawAds() {
   }
 }
 
-/** Write the full ads array back to ads.json. */
+/** Write the full ads array back to ads.json.
+ *  On read-only filesystems (e.g. Vercel serverless) writes are not possible;
+ *  we log and continue rather than crash the request — newly collected ads
+ *  simply aren't persisted across cold starts. */
 function writeRawAds(ads) {
-  fs.writeFileSync(ADS_PATH, JSON.stringify(ads, null, 2) + '\n', 'utf-8');
+  try {
+    fs.writeFileSync(ADS_PATH, JSON.stringify(ads, null, 2) + '\n', 'utf-8');
+  } catch (err) {
+    console.warn('[dataService] Could not persist ads.json (read-only FS?):', err.message);
+  }
 }
 
 /**

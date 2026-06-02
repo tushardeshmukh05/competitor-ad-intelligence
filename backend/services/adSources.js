@@ -15,13 +15,21 @@
 
 'use strict';
 
-const { searchCompetitorAds, mockAds } = require('../../playwright/scraper');
 const { searchViaApi, isConfigured } = require('./adLibraryApi');
+
+// The Playwright scraper is loaded lazily: it pulls in the heavy `playwright`
+// dependency and only runs in a real browser environment (local / a server with
+// Chromium). On serverless platforms like Vercel it can't launch a browser, so
+// we never want it required at cold start — only when the 'scrape'/'mock'
+// source is actually invoked.
+function loadScraper() {
+  return require('../../playwright/scraper');
+}
 
 const runners = {
   api: (name, opts) => searchViaApi(name, opts),
-  scrape: (name, opts) => searchCompetitorAds(name, opts),
-  mock: (name) => Promise.resolve(mockAds(name)),
+  scrape: (name, opts) => loadScraper().searchCompetitorAds(name, opts),
+  mock: (name) => Promise.resolve(loadScraper().mockAds(name)),
 };
 
 /** Build the ordered list of sources to attempt for a requested `source`. */

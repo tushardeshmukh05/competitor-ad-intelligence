@@ -50,10 +50,14 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: 'Internal server error' });
 });
 
-app.listen(PORT, () => {
-  console.log(`\n  Competitor Ad Intelligence`);
-  console.log(`  → API & UI:  http://localhost:${PORT}`);
-  console.log(`  → Health:    http://localhost:${PORT}/api/health\n`);
-});
+// Only start a listening server when run directly (local dev / `npm start`).
+// On Vercel the app is imported as a serverless function and must NOT listen.
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`\n  Competitor Ad Intelligence`);
+    console.log(`  → API & UI:  http://localhost:${PORT}`);
+    console.log(`  → Health:    http://localhost:${PORT}/api/health\n`);
+  });
+}
 
 module.exports = app;
