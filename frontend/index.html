@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Competitor Ad Intelligence</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            base: '#0F172A',
+            card: '#1E293B',
+            accent: '#3B82F6',
+          },
+        },
+      },
+    };
+  </script>
+  <style>
+    body { background-color: #0F172A; }
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: #0F172A; }
+    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 9999px; }
+    ::-webkit-scrollbar-thumb:hover { background: #475569; }
+    .fade-in { animation: fade 0.3s ease both; }
+    @keyframes fade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+    .spin { animation: spin 0.8s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body class="text-slate-200 min-h-screen">
+
+  <!-- ══════════════ HEADER ══════════════ -->
+  <header class="sticky top-0 z-30 border-b border-slate-800 bg-base/90 backdrop-blur">
+    <div class="mx-auto max-w-7xl px-4 py-4 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+      <div class="flex items-center gap-3">
+        <div class="h-10 w-10 rounded-xl bg-accent/20 flex items-center justify-center text-accent text-xl">📊</div>
+        <div>
+          <h1 class="text-xl font-bold text-white leading-tight">Competitor Ad Intelligence</h1>
+          <p class="text-xs text-slate-400">Search competitor Meta/Facebook ads &amp; analyze creative trends</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-2 w-full md:w-auto">
+        <input
+          id="searchInput"
+          type="text"
+          placeholder="Search competitors (e.g. nike, adidas)…"
+          class="flex-1 md:w-64 rounded-xl bg-card border border-slate-700 px-4 py-2.5 text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-accent"
+        />
+        <select
+          id="searchSource"
+          title="Data source"
+          class="rounded-xl bg-card border border-slate-700 px-2.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-accent"
+        >
+          <option value="auto">Auto</option>
+          <option value="api">RapidAPI</option>
+          <option value="scrape">Live scrape</option>
+          <option value="mock">Mock</option>
+        </select>
+        <button
+          id="searchBtn"
+          class="rounded-xl bg-accent px-5 py-2.5 text-sm font-semibold text-white shadow-lg hover:bg-blue-600 transition-colors"
+        >Search</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="mx-auto max-w-7xl px-4 py-6">
+
+    <!-- ══════════════ STATS CARDS ══════════════ -->
+    <section id="statsCards" class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <!-- filled by JS -->
+    </section>
+
+    <div class="grid grid-cols-1 xl:grid-cols-4 gap-6">
+
+      <!-- ════════ LEFT / MAIN COLUMN ════════ -->
+      <div class="xl:col-span-3 space-y-5">
+
+        <!-- ══════════════ FILTERS + CONTROLS ══════════════ -->
+        <section class="bg-card rounded-xl shadow-lg p-4 border border-slate-800">
+          <div class="flex flex-wrap items-end gap-3">
+            <div class="flex flex-col">
+              <label class="text-xs text-slate-400 mb-1">Country</label>
+              <select id="filterCountry" class="rounded-lg bg-base border border-slate-700 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent"></select>
+            </div>
+            <div class="flex flex-col">
+              <label class="text-xs text-slate-400 mb-1">Format</label>
+              <select id="filterFormat" class="rounded-lg bg-base border border-slate-700 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent"></select>
+            </div>
+            <div class="flex flex-col">
+              <label class="text-xs text-slate-400 mb-1">CTA</label>
+              <select id="filterCta" class="rounded-lg bg-base border border-slate-700 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent"></select>
+            </div>
+            <div class="flex flex-col">
+              <label class="text-xs text-slate-400 mb-1">Competitor</label>
+              <select id="filterCompetitor" class="rounded-lg bg-base border border-slate-700 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent"></select>
+            </div>
+            <div class="flex flex-col">
+              <label class="text-xs text-slate-400 mb-1">Sort by</label>
+              <select id="sortBy" class="rounded-lg bg-base border border-slate-700 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent">
+                <option value="score">Highest Score</option>
+                <option value="running">Longest Running</option>
+                <option value="newest">Newest</option>
+              </select>
+            </div>
+
+            <div class="ml-auto flex items-center gap-2">
+              <button id="resetBtn" class="rounded-lg border border-slate-700 px-3 py-2 text-sm text-slate-300 hover:bg-slate-700/50 transition">Reset</button>
+              <div class="flex rounded-lg border border-slate-700 overflow-hidden">
+                <button id="cardViewBtn" class="px-3 py-2 text-sm bg-accent text-white">Cards</button>
+                <button id="tableViewBtn" class="px-3 py-2 text-sm text-slate-300 hover:bg-slate-700/50">Table</button>
+              </div>
+            </div>
+          </div>
+          <p id="resultCount" class="text-xs text-slate-400 mt-3"></p>
+        </section>
+
+        <!-- ══════════════ AD GRID (CARD VIEW) ══════════════ -->
+        <section id="adGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></section>
+
+        <!-- ══════════════ TABLE VIEW ══════════════ -->
+        <section id="adTable" class="hidden bg-card rounded-xl shadow-lg border border-slate-800 overflow-x-auto">
+          <table class="w-full text-sm text-left">
+            <thead class="text-xs uppercase text-slate-400 border-b border-slate-700">
+              <tr>
+                <th class="px-4 py-3">Competitor</th>
+                <th class="px-4 py-3">Headline</th>
+                <th class="px-4 py-3">Format</th>
+                <th class="px-4 py-3">CTA</th>
+                <th class="px-4 py-3">Country</th>
+                <th class="px-4 py-3">Days</th>
+                <th class="px-4 py-3">Score</th>
+                <th class="px-4 py-3"></th>
+              </tr>
+            </thead>
+            <tbody id="adTableBody"></tbody>
+          </table>
+        </section>
+
+        <div id="emptyState" class="hidden text-center py-16 text-slate-500">
+          No ads match the current filters.
+        </div>
+      </div>
+
+      <!-- ════════ RIGHT SIDEBAR ════════ -->
+      <aside class="space-y-5">
+        <div class="bg-card rounded-xl shadow-lg p-4 border border-slate-800">
+          <h3 class="text-sm font-semibold text-white mb-3 flex items-center gap-2">🪝 Top Hooks</h3>
+          <ul id="topHooks" class="space-y-2 text-sm text-slate-300"></ul>
+        </div>
+        <div class="bg-card rounded-xl shadow-lg p-4 border border-slate-800">
+          <h3 class="text-sm font-semibold text-white mb-3 flex items-center gap-2">🎁 Top Offers</h3>
+          <ul id="topOffers" class="space-y-2 text-sm text-slate-300"></ul>
+        </div>
+        <div class="bg-card rounded-xl shadow-lg p-4 border border-slate-800">
+          <h3 class="text-sm font-semibold text-white mb-3 flex items-center gap-2">🔘 Top CTA Types</h3>
+          <ul id="topCtas" class="space-y-2 text-sm text-slate-300"></ul>
+        </div>
+      </aside>
+    </div>
+  </main>
+
+  <!-- ══════════════ ANALYSIS MODAL ══════════════ -->
+  <div id="modal" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-card w-full max-w-lg rounded-xl shadow-2xl border border-slate-700 max-h-[90vh] overflow-y-auto fade-in">
+      <div class="flex items-center justify-between p-4 border-b border-slate-700 sticky top-0 bg-card">
+        <h3 class="font-semibold text-white">🤖 AI Creative Analysis</h3>
+        <button id="modalClose" class="text-slate-400 hover:text-white text-xl leading-none">&times;</button>
+      </div>
+      <div id="modalBody" class="p-5 space-y-3 text-sm"></div>
+    </div>
+  </div>
+
+  <footer class="mx-auto max-w-7xl px-4 py-8 text-center text-xs text-slate-600">
+    Competitor Ad Intelligence · MVP · mock data only
+  </footer>
+
+  <script>
+  // ════════════════════════════════════════════════════════
+  //  State
+  // ════════════════════════════════════════════════════════
+  const API = ''; // same origin
+  let ALL_ADS = [];
+  let VIEW = 'cards';
+  let LAST_SOURCES = {}; // competitor -> data source that returned its ads
+
+  const $ = (sel) => document.querySelector(sel);
+
+  // ════════════════════════════════════════════════════════
+  //  Helpers
+  // ════════════════════════════════════════════════════════
+  const FORMAT_BADGE = {
+    video: 'bg-blue-500/20 text-blue-300',
+    carousel: 'bg-purple-500/20 text-purple-300',
+    image: 'bg-emerald-500/20 text-emerald-300',
+  };
+
+  function badge(type) {
+    return FORMAT_BADGE[type] || 'bg-slate-500/20 text-slate-300';
+  }
+
+  function escapeHtml(str) {
+    return String(str ?? '').replace(/[&<>"']/g, (c) => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+    }[c]));
+  }
+
+  function unique(arr) {
+    return [...new Set(arr.filter(Boolean))];
+  }
+
+  // ════════════════════════════════════════════════════════
+  //  Data loading
+  // ════════════════════════════════════════════════════════
+  async function loadAds() {
+    const res = await fetch(`${API}/api/ads`);
+    ALL_ADS = await res.json();
+    populateFilters();
+    render();
+  }
+
+  // POST search -> scrapes the Meta Ad Library for the searched competitors
+  // (real scraping can take ~30-60s per brand), persists, and returns them.
+  async function runSearch() {
+    const q = $('#searchInput').value.trim();
+    const competitors = q ? q.split(',').map((s) => s.trim()).filter(Boolean) : [];
+    const source = $('#searchSource').value;
+
+    const btn = $('#searchBtn');
+    const original = btn.textContent;
+    btn.disabled = true;
+    const verb = source === 'api' ? 'Fetching…' : source === 'mock' ? 'Loading…' : 'Scraping…';
+    btn.innerHTML = `<span class="spin inline-block h-4 w-4 border-2 border-white/40 border-t-white rounded-full align-[-2px]"></span> ${verb}`;
+    $('#adGrid').innerHTML = '';
+    $('#adTable').classList.add('hidden');
+    $('#emptyState').classList.remove('hidden');
+    const slow = source === 'scrape' || source === 'auto';
+    $('#emptyState').textContent = `⏳ Searching the Meta Ad Library (${source}) for ${competitors.join(', ') || 'ads'}…${slow ? ' a live scrape can take up to a minute per brand.' : ''}`;
+
+    try {
+      const res = await fetch(`${API}/api/competitors/search`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ competitors, source }),
+      });
+      const data = await res.json();
+      ALL_ADS = data.results || [];
+      LAST_SOURCES = data.sourcesUsed || {};
+      populateFilters();
+      render();
+      if (!ALL_ADS.length && data.note) {
+        $('#emptyState').classList.remove('hidden');
+        $('#emptyState').textContent = `ℹ️ ${data.note}`;
+      }
+    } catch (err) {
+      $('#emptyState').classList.remove('hidden');
+      $('#emptyState').textContent = `⚠️ Search failed: ${err.message}`;
+    } finally {
+      btn.disabled = false;
+      btn.textContent = original;
+    }
+  }
+
+  // ════════════════════════════════════════════════════════
+  //  Stats cards
+  // ════════════════════════════════════════════════════════
+  function renderStats() {
+    const longest = [...ALL_ADS].sort((a, b) => (b.running_days || 0) - (a.running_days || 0))[0];
+    const cards = [
+      { label: 'Total Ads', value: ALL_ADS.length, icon: '📦' },
+      { label: 'Video Ads', value: ALL_ADS.filter((a) => a.media_type === 'video').length, icon: '🎬' },
+      { label: 'Carousel Ads', value: ALL_ADS.filter((a) => a.media_type === 'carousel').length, icon: '🖼️' },
+      {
+        label: 'Longest Running Ad',
+        value: longest ? `${longest.running_days}d` : '—',
+        sub: longest ? longest.competitor : '',
+        icon: '⏳',
+      },
+    ];
+    $('#statsCards').innerHTML = cards.map((c) => `
+      <div class="bg-card rounded-xl shadow-lg p-4 border border-slate-800 hover:border-accent/50 transition-colors fade-in">
+        <div class="flex items-center justify-between">
+          <span class="text-xs text-slate-400">${c.label}</span>
+          <span class="text-lg">${c.icon}</span>
+        </div>
+        <div class="mt-2 text-2xl font-bold text-white">${c.value}</div>
+        ${c.sub ? `<div class="text-xs text-slate-500 mt-0.5">${escapeHtml(c.sub)}</div>` : ''}
+      </div>
+    `).join('');
+  }
+
+  // ════════════════════════════════════════════════════════
+  //  Sidebar (top hooks / offers / cta types)
+  // ════════════════════════════════════════════════════════
+  function tally(getter) {
+    const map = new Map();
+    for (const ad of ALL_ADS) {
+      const v = getter(ad);
+      if (!v) continue;
+      map.set(v, (map.get(v) || 0) + 1);
+    }
+    return [...map.entries()].sort((a, b) => b[1] - a[1]).slice(0, 5);
+  }
+
+  function listItems(entries) {
+    if (!entries.length) return '<li class="text-slate-500">No data</li>';
+    return entries.map(([name, count]) => `
+      <li class="flex items-center justify-between gap-2">
+        <span class="truncate">${escapeHtml(name)}</span>
+        <span class="shrink-0 text-xs rounded-full bg-accent/20 text-accent px-2 py-0.5">${count}</span>
+      </li>
+    `).join('');
+  }
+
+  function renderSidebar() {
+    $('#topHooks').innerHTML = listItems(tally((a) => a.analysis?.hook));
+    $('#topOffers').innerHTML = listItems(tally((a) => a.analysis?.offer));
+    $('#topCtas').innerHTML = listItems(tally((a) => a.analysis?.cta_type || a.cta));
+  }
+
+  // ════════════════════════════════════════════════════════
+  //  Filters
+  // ════════════════════════════════════════════════════════
+  function fillSelect(el, values, allLabel) {
+    el.innerHTML =
+      `<option value="">${allLabel}</option>` +
+      values.map((v) => `<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`).join('');
+  }
+
+  function populateFilters() {
+    fillSelect($('#filterCountry'), unique(ALL_ADS.map((a) => a.country)).sort(), 'All Countries');
+    fillSelect($('#filterFormat'), unique(ALL_ADS.map((a) => a.media_type)).sort(), 'All Formats');
+    fillSelect($('#filterCta'), unique(ALL_ADS.map((a) => a.cta)).sort(), 'All CTAs');
+    fillSelect($('#filterCompetitor'), unique(ALL_ADS.map((a) => a.competitor)).sort(), 'All Competitors');
+  }
+
+  function getFiltered() {
+    const country = $('#filterCountry').value;
+    const format = $('#filterFormat').value;
+    const cta = $('#filterCta').value;
+    const competitor = $('#filterCompetitor').value;
+    const sortBy = $('#sortBy').value;
+
+    let list = ALL_ADS.filter((a) =>
+      (!country || a.country === country) &&
+      (!format || a.media_type === format) &&
+      (!cta || a.cta === cta) &&
+      (!competitor || a.competitor === competitor)
+    );
+
+    list = [...list].sort((a, b) => {
+      if (sortBy === 'running') return (b.running_days || 0) - (a.running_days || 0);
+      if (sortBy === 'newest') return new Date(b.start_date || 0) - new Date(a.start_date || 0);
+      return (b.score || 0) - (a.score || 0);
+    });
+    return list;
+  }
+
+  // ════════════════════════════════════════════════════════
+  //  Rendering: cards + table
+  // ════════════════════════════════════════════════════════
+  function adCard(ad) {
+    return `
+      <article class="bg-card rounded-xl shadow-lg border border-slate-800 overflow-hidden hover:border-accent/50 hover:-translate-y-0.5 transition-all fade-in">
+        <div class="relative">
+          <img src="${escapeHtml(ad.image_url)}" alt="" class="w-full h-40 object-cover bg-slate-800" loading="lazy" />
+          <span class="absolute top-2 left-2 text-xs px-2 py-0.5 rounded-full ${badge(ad.media_type)}">${escapeHtml(ad.media_type)}</span>
+          <span class="absolute top-2 right-2 text-xs px-2 py-0.5 rounded-full bg-black/60 text-white">🔥 ${ad.score}</span>
+        </div>
+        <div class="p-4 space-y-2">
+          <div class="flex items-center justify-between">
+            <span class="text-sm font-semibold text-accent">${escapeHtml(ad.competitor)}</span>
+            <span class="text-xs text-slate-400">${escapeHtml(ad.country)}</span>
+          </div>
+          <h3 class="font-semibold text-white leading-snug">${escapeHtml(ad.headline)}</h3>
+          <p class="text-xs text-slate-400 line-clamp-2">${escapeHtml(ad.ad_copy)}</p>
+          <div class="flex items-center gap-2 flex-wrap text-xs pt-1">
+            <span class="rounded-md bg-slate-700/60 px-2 py-0.5">${escapeHtml(ad.cta)}</span>
+            <span class="rounded-md bg-slate-700/60 px-2 py-0.5">⏳ ${ad.running_days}d</span>
+          </div>
+          ${ad.analysis?.summary ? `<p class="text-xs text-slate-500 border-l-2 border-accent/40 pl-2 mt-2">${escapeHtml(ad.analysis.summary)}</p>` : ''}
+          <button data-analyze="${ad.id}" class="mt-2 w-full rounded-lg bg-accent/10 text-accent text-sm py-2 font-medium hover:bg-accent/20 transition">✨ Analyze with AI</button>
+        </div>
+      </article>`;
+  }
+
+  function adRow(ad) {
+    return `
+      <tr class="border-b border-slate-800 hover:bg-slate-700/30">
+        <td class="px-4 py-3 font-medium text-accent">${escapeHtml(ad.competitor)}</td>
+        <td class="px-4 py-3 max-w-xs truncate">${escapeHtml(ad.headline)}</td>
+        <td class="px-4 py-3"><span class="text-xs px-2 py-0.5 rounded-full ${badge(ad.media_type)}">${escapeHtml(ad.media_type)}</span></td>
+        <td class="px-4 py-3">${escapeHtml(ad.cta)}</td>
+        <td class="px-4 py-3">${escapeHtml(ad.country)}</td>
+        <td class="px-4 py-3">${ad.running_days}</td>
+        <td class="px-4 py-3 font-semibold text-white">${ad.score}</td>
+        <td class="px-4 py-3"><button data-analyze="${ad.id}" class="text-accent hover:underline text-xs">Analyze</button></td>
+      </tr>`;
+  }
+
+  function render() {
+    const list = getFiltered();
+    const usedSources = [...new Set(Object.values(LAST_SOURCES).filter(Boolean))];
+    const srcLabel = usedSources.length ? ` · via ${usedSources.join(', ')}` : '';
+    $('#resultCount').textContent = ALL_ADS.length
+      ? `Showing ${list.length} ad${list.length === 1 ? '' : 's'}${srcLabel}`
+      : '';
+    renderStats();
+    renderSidebar();
+
+    const empty = list.length === 0;
+    $('#emptyState').textContent = ALL_ADS.length
+      ? 'No ads match the current filters.'
+      : '🔍 Search a competitor above to discover and analyze their ads.';
+    $('#emptyState').classList.toggle('hidden', !empty);
+
+    if (VIEW === 'cards') {
+      $('#adGrid').classList.remove('hidden');
+      $('#adTable').classList.add('hidden');
+      $('#adGrid').innerHTML = list.map(adCard).join('');
+    } else {
+      $('#adGrid').classList.add('hidden');
+      $('#adTable').classList.toggle('hidden', empty);
+      $('#adTableBody').innerHTML = list.map(adRow).join('');
+    }
+  }
+
+  // ════════════════════════════════════════════════════════
+  //  AI analysis modal
+  // ════════════════════════════════════════════════════════
+  function openModal() { $('#modal').classList.remove('hidden'); }
+  function closeModal() { $('#modal').classList.add('hidden'); }
+
+  function renderAnalysis(a) {
+    const rows = [
+      ['Hook', a.hook],
+      ['Offer', a.offer],
+      ['CTA Type', a.cta_type],
+      ['Marketing Angle', a.angle],
+      ['Audience', a.audience],
+      ['Audience Intent', a.audience_intent],
+      ['Funnel Stage', a.funnel_stage],
+      ['Emotional Trigger', a.emotional_trigger],
+    ].filter(([, v]) => v);
+
+    return `
+      <dl class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        ${rows.map(([k, v]) => `
+          <div class="bg-base rounded-lg p-3 border border-slate-800">
+            <dt class="text-xs text-slate-400">${k}</dt>
+            <dd class="text-sm text-white mt-0.5">${escapeHtml(v)}</dd>
+          </div>`).join('')}
+      </dl>
+      ${a.summary ? `<div class="bg-base rounded-lg p-3 border border-slate-800 mt-2">
+        <dt class="text-xs text-slate-400">Summary</dt>
+        <dd class="text-sm text-slate-200 mt-0.5">${escapeHtml(a.summary)}</dd>
+      </div>` : ''}
+      ${a._source && a._source !== 'ai' ? `<p class="text-xs text-amber-400/80 mt-2">⚠️ Heuristic analysis (no AI key configured).</p>` : ''}`;
+  }
+
+  async function analyze(id) {
+    openModal();
+    $('#modalBody').innerHTML = `<div class="flex items-center gap-3 text-slate-400 py-8 justify-center">
+      <span class="spin inline-block h-5 w-5 border-2 border-slate-600 border-t-accent rounded-full"></span> Analyzing creative…</div>`;
+    try {
+      const ad = ALL_ADS.find((a) => String(a.id) === String(id));
+      const res = await fetch(`${API}/api/analyze/${id}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ad }), // fallback for generated (non-persisted) ads
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed');
+      $('#modalBody').innerHTML = renderAnalysis(data.analysis || {});
+    } catch (err) {
+      $('#modalBody').innerHTML = `<p class="text-red-400">Analysis failed: ${escapeHtml(err.message)}</p>`;
+    }
+  }
+
+  // ════════════════════════════════════════════════════════
+  //  Events
+  // ════════════════════════════════════════════════════════
+  $('#searchBtn').addEventListener('click', runSearch);
+  $('#searchInput').addEventListener('keydown', (e) => { if (e.key === 'Enter') runSearch(); });
+
+  ['filterCountry', 'filterFormat', 'filterCta', 'filterCompetitor', 'sortBy'].forEach((id) =>
+    $('#' + id).addEventListener('change', render)
+  );
+
+  $('#resetBtn').addEventListener('click', () => {
+    $('#searchInput').value = '';
+    ['filterCountry', 'filterFormat', 'filterCta', 'filterCompetitor'].forEach((id) => ($('#' + id).value = ''));
+    $('#sortBy').value = 'score';
+    loadAds();
+  });
+
+  $('#cardViewBtn').addEventListener('click', () => {
+    VIEW = 'cards';
+    $('#cardViewBtn').className = 'px-3 py-2 text-sm bg-accent text-white';
+    $('#tableViewBtn').className = 'px-3 py-2 text-sm text-slate-300 hover:bg-slate-700/50';
+    render();
+  });
+  $('#tableViewBtn').addEventListener('click', () => {
+    VIEW = 'table';
+    $('#tableViewBtn').className = 'px-3 py-2 text-sm bg-accent text-white';
+    $('#cardViewBtn').className = 'px-3 py-2 text-sm text-slate-300 hover:bg-slate-700/50';
+    render();
+  });
+
+  // delegated analyze buttons (cards + table)
+  document.body.addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-analyze]');
+    if (btn) analyze(btn.getAttribute('data-analyze'));
+  });
+
+  $('#modalClose').addEventListener('click', closeModal);
+  $('#modal').addEventListener('click', (e) => { if (e.target === $('#modal')) closeModal(); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal(); });
+
+  // ════════════════════════════════════════════════════════
+  //  Init
+  // ════════════════════════════════════════════════════════
+  (async function init() {
+    await loadAds(); // empty until the user searches a competitor
+  })();
+  </script>
+</body>
+</html>

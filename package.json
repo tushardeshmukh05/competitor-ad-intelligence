@@ -1,0 +1,33 @@
+{
+  "name": "competitor-ad-intelligence",
+  "version": "1.0.0",
+  "description": "Search competitor Meta/Facebook ads and analyze creative trends for performance marketers.",
+  "main": "backend/server.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node backend/server.js",
+    "dev": "nodemon backend/server.js",
+    "scrape": "node playwright/scraper.js",
+    "postinstall": "echo 'Run: npx playwright install chromium  (only needed for real scraping)'"
+  },
+  "keywords": [
+    "ads",
+    "meta",
+    "facebook",
+    "competitor-intelligence",
+    "marketing",
+    "playwright"
+  ],
+  "author": "AdSparkx",
+  "license": "MIT",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "openai": "^4.56.0",
+    "playwright": "^1.46.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.4"
+  }
+}
